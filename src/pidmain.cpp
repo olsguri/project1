@@ -124,10 +124,14 @@ int main(int argc, char** argv){
     ros::Rate control_rate(10);
     while(ros::ok()){
 	
-	drive_msg_stamped.drive.speed = 1.0;
+	drive_msg_stamped.drive.speed = 2.0;
 	drive_msg_stamped.drive.steering_angle = pid_ctrl.get_control(car_pose,path.at(current_goal));
 	car_ctrl_pub.publish(drive_msg_stamped);
-
+	if(sqrt(pow(car_pose.x-path.at(current_goal).x,2)+pow(car_pose.y-path.at(current_goal).y,2))<0.2) { 
+		if(current_goal<8) current_goal++;
+		else break;
+	}
+		
 	
 
 	 	
@@ -144,6 +148,7 @@ int main(int argc, char** argv){
         ros::spinOnce();
         control_rate.sleep();
         printf("car pose : %.2f,%.2f,%.2f \n", car_pose.x, car_pose.y, car_pose.th);
+	printf("ctrl, error : %.2f , %.2f \n", drive_msg_stamped.drive.steering_angle,pid_ctrl.error);
     }
 
     return 0;
@@ -178,3 +183,10 @@ void setpath(){
     path.push_back(point3);    path.push_back(point4);    path.push_back(point5);
     path.push_back(point6);    path.push_back(point7);    path.push_back(point8);
 }
+
+
+
+
+
+
+
