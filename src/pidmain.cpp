@@ -123,7 +123,14 @@ int main(int argc, char** argv){
     // control rate, 10 Hz
     ros::Rate control_rate(10);
     while(ros::ok()){
-		
+	
+	drive_msg_stamped.drive.speed = 1.0;
+	drive_msg_stamped.drive.steering_angle = pid_ctrl.get_control(car_pose,path.at(current_goal));
+	car_ctrl_pub.publish(drive_msg_stamped);
+
+	
+
+	 	
         /*TO DO
          * 1. make control value for steering angle using PID class. An instance is predefined as "pid_ctrl".
          * 2. publish control to racecar.
