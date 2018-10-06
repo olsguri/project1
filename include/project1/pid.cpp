@@ -9,7 +9,7 @@ PID::PID(){
     */
 
 	Kp=5.0;
-	Ki=1.0;
+	Ki=0.0;
 	Kd=1.0;
 	error = 0.0;
 	error_sum = 0.0;
