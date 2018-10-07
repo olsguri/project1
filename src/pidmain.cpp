@@ -65,101 +65,102 @@ int main(int argc, char** argv){
                 std::string("</robot>");
 
         std::ostringstream ball_name;
-        ball_name << i;
-        model.request.model_name = ball_name.str();
-        model.request.reference_frame = "world";
-        model.request.initial_pose.position.x = path[i].x;
-        model.request.initial_pose.position.y = path[i].y;
-        model.request.initial_pose.position.z = 2.0;
-        model.request.initial_pose.orientation.w = 0.0;
-        model.request.initial_pose.orientation.x = 0.0;
-        model.request.initial_pose.orientation.y = 0.0;
-        model.request.initial_pose.orientation.z = 0.0;
+ball_name << i;
+model.request.model_name = ball_name.str();
+model.request.reference_frame = "world";
+model.request.initial_pose.position.x = path[i].x;
+model.request.initial_pose.position.y = path[i].y;
+model.request.initial_pose.position.z = 2.0;
+model.request.initial_pose.orientation.w = 0.0;
+model.request.initial_pose.orientation.x = 0.0;
+model.request.initial_pose.orientation.y = 0.0;
+model.request.initial_pose.orientation.z = 0.0;
 
-        gazebo_spawn.call(model);
+gazebo_spawn.call(model);
 
-        ros::spinOnce();
-        ros::Rate(10).sleep();
-    }
+ros::spinOnce();
+ros::Rate(10).sleep();
+}
 
-    // set the car on the initial position
-    geometry_msgs::Pose model_pose;
-    model_pose.position.x = path[0].x;
-    model_pose.position.y = path[0].y;
-    model_pose.position.z = 0.3;
-    model_pose.orientation.x = 0.0;
-    model_pose.orientation.y = 0.0;
-    model_pose.orientation.z = 0.0;
-    model_pose.orientation.w = 0.0;
+// set the car on the initial position
+geometry_msgs::Pose model_pose;
+model_pose.position.x = path[0].x;
+model_pose.position.y = path[0].y;
+model_pose.position.z = 0.3;
+model_pose.orientation.x = 0.0;
+model_pose.orientation.y = 0.0;
+model_pose.orientation.z = 0.0;
+model_pose.orientation.w = 0.0;
 
-    geometry_msgs::Twist model_twist;
-    model_twist.linear.x = 0.0;
-    model_twist.linear.y = 0.0;
-    model_twist.linear.z = 0.0;
-    model_twist.angular.x = 0.0;
-    model_twist.angular.y = 0.0;
-    model_twist.angular.z = 0.0;
+geometry_msgs::Twist model_twist;
+model_twist.linear.x = 0.0;
+model_twist.linear.y = 0.0;
+model_twist.linear.z = 0.0;
+model_twist.angular.x = 0.0;
+model_twist.angular.y = 0.0;
+model_twist.angular.z = 0.0;
 
-    gazebo_msgs::ModelState modelstate;
-    modelstate.model_name = "racecar";
-    modelstate.reference_frame = "world";
-    modelstate.pose = model_pose;
-    modelstate.twist = model_twist;
+gazebo_msgs::ModelState modelstate;
+modelstate.model_name = "racecar";
+modelstate.reference_frame = "world";
+modelstate.pose = model_pose;
+modelstate.twist = model_twist;
 
-    gazebo_msgs::SetModelState setmodelstate;
-    setmodelstate.request.model_state = modelstate;
+gazebo_msgs::SetModelState setmodelstate;
+setmodelstate.request.model_state = modelstate;
 
-    gazebo_set.call(setmodelstate);
-    ros::spinOnce();
-    ros::Rate(0.5).sleep();
-    // finish initialization
+gazebo_set.call(setmodelstate);
+ros::spinOnce();
+ros::Rate(0.5).sleep();
+// finish initialization
 
-    /* controller */
-    
-    int current_goal = 1;
-    PID pid_ctrl;
-    ackermann_msgs::AckermannDriveStamped drive_msg_stamped;
+/* controller */
 
-    // control rate, 10 Hz
-    ros::Rate control_rate(10);
-    while(ros::ok()){
-	
-	drive_msg_stamped.drive.speed = 2.0;
-	drive_msg_stamped.drive.steering_angle = pid_ctrl.get_control(car_pose,path.at(current_goal));
+int current_goal = 1;
+PID pid_ctrl;
+ackermann_msgs::AckermannDriveStamped drive_msg_stamped;
+
+// control rate, 10 Hz
+ros::Rate control_rate(10);
+while(ros::ok()){
+	float ctrl = pid_ctrl.get_control(car_pose,path.at(current_goal));
+	float speed = 0.3;	
+	float max_steering = (0.45/speed + 0.25 < 1.18 )? 0.45/speed + 0.25 : 1.18;
+	drive_msg_stamped.drive.speed = speed;
+	drive_msg_stamped.drive.steering_angle= ctrl*max_steering/3;
 	car_ctrl_pub.publish(drive_msg_stamped);
 	if(sqrt(pow(car_pose.x-path.at(current_goal).x,2)+pow(car_pose.y-path.at(current_goal).y,2))<0.2) { 
 		if(current_goal<8) current_goal++;
 		else break;
 	}
-		
 	
 
-	 	
-        /*TO DO
-         * 1. make control value for steering angle using PID class. An instance is predefined as "pid_ctrl".
-         * 2. publish control to racecar.
-         *    use predefined publisher, "car_ctrl_pub" and use predefined variable, "drive_msg_stamped".
-         * 3. check whether pioneer reached a currently following way point or not.
-         *    calculate distance between current pose of robot and currently following way point.
-         *    if distance is less than 0.2m (you can change this threshold), pursue next way point.
-         * 4. check whether car reached final way point(end of path). if it is, terminate controller.
-        */
-        
-        ros::spinOnce();
-        control_rate.sleep();
-        printf("car pose : %.2f,%.2f,%.2f \n", car_pose.x, car_pose.y, car_pose.th);
-	printf("ctrl, error : %.2f , %.2f \n", drive_msg_stamped.drive.steering_angle,pid_ctrl.error);
-    }
 
-    return 0;
+/*TO DO
+ * 1. make control value for steering angle using PID class. An instance is predefined as "pid_ctrl".
+ * 2. publish control to racecar.
+ *    use predefined publisher, "car_ctrl_pub" and use predefined variable, "drive_msg_stamped".
+ * 3. check whether pioneer reached a currently following way point or not.
+ *    calculate distance between current pose of robot and currently following way point.
+ *    if distance is less than 0.2m (you can change this threshold), pursue next way point.
+ * 4. check whether car reached final way point(end of path). if it is, terminate controller.
+*/
+
+	ros::spinOnce();
+	control_rate.sleep();
+	printf("car pose : %.2f,%.2f,%.2f \n", car_pose.x, car_pose.y, car_pose.th);
+	printf("ctrl, speed , error , error_diff, error_sum : %.2f , %.2f , %.2f , %.2f , %.2f , %d \n", ctrl*max_steering/3,speed,pid_ctrl.error,pid_ctrl.error_diff,pid_ctrl.error_sum,current_goal);
+	}
+
+	return 0;
 }
 
 // get position data from ros msgs
 void callback_state(gazebo_msgs::ModelStatesConstPtr msgs){
-    for(int i; i < msgs->name.size(); i++){
-        if(std::strcmp(msgs->name[i].c_str(),"racecar") == 0){
-            car_pose.x = msgs->pose[i].position.x;
-            car_pose.y = msgs->pose[i].position.y;
+for(int i; i < msgs->name.size(); i++){
+if(std::strcmp(msgs->name[i].c_str(),"racecar") == 0){
+    car_pose.x = msgs->pose[i].position.x;
+    car_pose.y = msgs->pose[i].position.y;
             car_pose.th = tf::getYaw(msgs->pose[i].orientation);
         }
     }

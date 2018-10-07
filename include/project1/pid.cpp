@@ -8,9 +8,9 @@ PID::PID(){
      *
     */
 
-	Kp=0.5;
-	Ki=0.0;
-	Kd=0.0;
+	Kp=2.0;
+	Ki=0.005;
+	Kd=10;
 	error = 0.0;
 	error_sum = 0.0;
 	error_diff = 0.0;
@@ -32,14 +32,26 @@ float PID::get_control(point car_pose, point goal_pose){
 
     float angle_from_car_to_goal=atan2(goal_pose.y-car_pose.y,goal_pose.x-car_pose.x);
     float heading_angle = atan2(car_pose.y-pre_y,car_pose.x-pre_x);
-	error_sum += error;
-	error_diff =angle_from_car_to_goal - heading_angle  - error;
-        error = angle_from_car_to_goal - heading_angle;
+
+    float pre_error=error;
+	error = angle_from_car_to_goal - heading_angle;
 	if(error<= -M_PI) error += 2*M_PI;
-	else if(error>=M_PI) error -= 2*M_PI;
+        else if(error>=M_PI) error -= 2*M_PI;
+
+
+	if(sqrt(pow(car_pose.x-goal_pose.x,2)+pow(car_pose.y-goal_pose.y,2))<0.2) {
+                error_sum=0;
+        }
+
+
+
+	error_sum += pre_error;
+	error_diff =  error - pre_error;
+
 	ctrl = Kp* error + Ki*error_sum + Kd*error_diff;  
-	if(ctrl>=0.5) ctrl=0.5;
-	else if(ctrl<=-0.5) ctrl=-0.5;
+	if(ctrl>=3.0) ctrl=3.0;
+	else if(ctrl<=-3.0) ctrl=-3.0;
+
 	pre_x=car_pose.x;
 	pre_y=car_pose.y;
  /* TO DO
