@@ -124,7 +124,7 @@ ackermann_msgs::AckermannDriveStamped drive_msg_stamped;
 ros::Rate control_rate(10);
 while(ros::ok()){
 	float ctrl = pid_ctrl.get_control(car_pose,path.at(current_goal));
-	float speed = 0.3;	
+	float speed = 1.0;	
 	float max_steering = (0.45/speed + 0.25 < 1.18 )? 0.45/speed + 0.25 : 1.18;
 	drive_msg_stamped.drive.speed = speed;
 	drive_msg_stamped.drive.steering_angle= ctrl*max_steering/3;
@@ -149,7 +149,7 @@ while(ros::ok()){
 	ros::spinOnce();
 	control_rate.sleep();
 	printf("car pose : %.2f,%.2f,%.2f \n", car_pose.x, car_pose.y, car_pose.th);
-	printf("ctrl, speed , error , error_diff, error_sum : %.2f , %.2f , %.2f , %.2f , %.2f , %d \n", ctrl*max_steering/3,speed,pid_ctrl.error,pid_ctrl.error_diff,pid_ctrl.error_sum,current_goal);
+//	printf("ctrl, speed , error , error_diff, error_sum : %.2f , %.2f , %.2f , %.2f , %.2f , %d \n", ctrl*max_steering/3,speed,pid_ctrl.error,pid_ctrl.error_diff,pid_ctrl.error_sum,current_goal);
 	}
 
 	return 0;
